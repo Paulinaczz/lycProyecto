@@ -1,0 +1,10 @@
+// Diagrama NFA
+strict digraph {
+	rankdir=LR
+	node [shape=circle]
+	0 -> 1 [label=a]
+	1 -> 2 [label="."]
+	0 -> 1
+	2 -> 3 [label=b]
+	3 [shape=doublecircle]
+}
