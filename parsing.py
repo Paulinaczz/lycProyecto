@@ -1,5 +1,10 @@
 from tokens import TokenType
-from nodes import *
+from nodes.letter import Letter
+from nodes.kleene import Kleene
+from nodes.question import Question
+from nodes.plus import Plus
+from nodes.orNode import Or
+from nodes.append import Append
 
 
 class Parser:

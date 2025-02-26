@@ -1,6 +1,11 @@
 from graphviz import Digraph
 from pprint import pprint
-from nodes import Or
+from nodes.letter import Letter
+from nodes.kleene import Kleene
+from nodes.question import Question
+from nodes.plus import Plus
+from nodes.orNode import Or
+from nodes.append import Append
 from tokens import TokenType
 from utils import WriteToFile
 import os
