@@ -2,7 +2,11 @@
 strict digraph {
 	rankdir=LR
 	node [shape=circle]
-	0 -> 1 [label=a]
-	1 -> 2 [label=b]
-	2 [shape=doublecircle]
+	0 -> 1 [label=e]
+	1 -> 2 [label=a]
+	0 -> 3 [label=e]
+	3 -> 4 [label=b]
+	2 -> 5 [label=e]
+	4 -> 5 [label=e]
+	5 [shape=doublecircle]
 }

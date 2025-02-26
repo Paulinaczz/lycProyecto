@@ -150,11 +150,11 @@ class DFA:
         for state, values in self.trans_table.items():
             self.nodes.append(Node(int(state), values))
 
-    def TransformNFAToDFA(self):
+    def TransformarNFAaDFA(self):
         self.GetDStates()
         self.EvaluateClosure([], 0, 'A')
 
-    def GraphDFA(self):
+    def GraficarDFA(self):
         states = set(self.trans_func.keys())
         alphabet = set(self.symbols)
         initial_state = 'A'

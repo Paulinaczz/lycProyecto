@@ -3,6 +3,7 @@ from tkinter import messagebox
 from direct_reader import DirectReader
 from parsing import Parser
 from nfa import NFA
+from dfa import DFA
 
 def convertir_regex():
     regex = entry_regex.get()
@@ -23,13 +24,18 @@ def convertir_regex():
         afnd = NFA(arbol_sintactico, reader.GetSymbols(), regex)
         afnd.WriteNFADiagram()
         
-        messagebox.showinfo("Éxito", "Diagrama del AFND generado con éxito.")
+        # Convertir AFND a AFD
+        dfa = DFA(afnd.trans_func, reader.GetSymbols(), list(afnd.trans_func.keys()), afnd.accepting_states, regex)
+        dfa.TransformarNFAaDFA()
+        dfa.GraficarDFA()
+
+        messagebox.showinfo("Éxito", "Diagramas del AFND y AFD generados con éxito.")
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error: {e}")
 
 # Crear la ventana principal
 root = tk.Tk()
-root.title("Conversión de Expresión Regular a AFND")
+root.title("Conversión de Expresión Regular a AFND y AFD")
 root.geometry("400x200")
 
 tk.Label(root, text="Ingresa una expresión regular:").pack(pady=10)
