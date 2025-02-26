@@ -1,37 +1,42 @@
+import tkinter as tk
+from tkinter import messagebox
 from direct_reader import DirectReader
 from parsing import Parser
 from nfa import NFA
 
-def main():
-    print("\n🔹 Conversión de Expresión Regular a AFND")
+def convertir_regex():
+    regex = entry_regex.get()
+    if not regex:
+        messagebox.showerror("Error", "Por favor, ingresa una expresión regular.")
+        return
     
-    # 1️⃣ Pedir expresión regular al usuario
-    regex = input("➡️  Ingresa una expresión regular: ")
-
     try:
-        # 2️⃣ Tokenizar la expresión regular
+        # Tokenizar la expresión regular
         reader = DirectReader(regex)
         tokens = list(reader.CreateTokens())
-
-        print("\n✅ Tokens generados:")
-        for token in tokens:
-            print(token)
-
-        # 3️⃣ Construir el árbol sintáctico
+        
+        # Construir el árbol sintáctico
         parser = Parser(tokens)
         arbol_sintactico = parser.Parse()
-
-        print("\n🌳 Árbol Sintáctico generado con éxito.")
-
-        # 4️⃣ Generar el AFND
+        
+        # Generar el AFND
         afnd = NFA(arbol_sintactico, reader.GetSymbols(), regex)
-
-        # 5️⃣ Dibujar el AFND
         afnd.WriteNFADiagram()
-        print("\n✅ Diagrama del AFND generado con éxito. Abriendo archivo...")
-
+        
+        messagebox.showinfo("Éxito", "Diagrama del AFND generado con éxito.")
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        messagebox.showerror("Error", f"Ocurrió un error: {e}")
 
-if __name__ == "__main__":
-    main()
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Conversión de Expresión Regular a AFND")
+root.geometry("400x200")
+
+tk.Label(root, text="Ingresa una expresión regular:").pack(pady=10)
+entry_regex = tk.Entry(root, width=40)
+entry_regex.pack(pady=5)
+
+btn_convertir = tk.Button(root, text="Convertir", command=convertir_regex)
+btn_convertir.pack(pady=20)
+
+root.mainloop()
