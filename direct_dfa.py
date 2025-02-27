@@ -3,240 +3,240 @@ from graphviz import Digraph
 from utils import WriteToFile
 from pprint import pprint
 
-RAW_STATES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+ESTADOS_BRUTO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 
-class DDFA:
-    def __init__(self, tree, symbols, regex):
+class DADF:
+    def __init__(self, arbol, simbolos, expresion_regular):
 
         # Useful for syntax tree
-        self.nodes = list()
+        self.nodos = list()
 
         # FA properties
-        self.symbols = symbols
-        self.states = list()
-        self.trans_func = dict()
-        self.accepting_states = set()
-        self.initial_state = 'A'
+        self.simbolos = simbolos
+        self.estados = list()
+        self.funcion_transicion = dict()
+        self.estados_aceptacion = set()
+        self.estado_inicial = 'A'
 
         # Class properties
-        self.tree = tree
-        self.regex = regex
-        self.augmented_state = None
+        self.arbol = arbol
+        self.expresion_regular = expresion_regular
+        self.estado_aumentado = None
         self.iter = 1
 
-        self.STATES = iter(RAW_STATES)
+        self.ESTADOS = iter(ESTADOS_BRUTO)
         try:
-            self.symbols.remove('e')
+            self.simbolos.remove('e')
         except:
             pass
 
         # Initialize dfa construction
-        self.ParseTree(self.tree)
-        self.CalcFollowPos()
+        self.ParseArbol(self.arbol)
+        self.CalcSigPos()
 
-    def CalcFollowPos(self):
-        for node in self.nodes:
-            if node.value == '*':
-                for i in node.lastpos:
-                    child_node = next(filter(lambda x: x._id == i, self.nodes))
-                    child_node.followpos += node.firstpos
-            elif node.value == '.':
-                for i in node.c1.lastpos:
-                    child_node = next(filter(lambda x: x._id == i, self.nodes))
-                    child_node.followpos += node.c2.firstpos
+    def CalcSigPos(self):
+        for nodo in self.nodos:
+            if nodo.value == '*':
+                for i in nodo.ultima_pos:
+                    nodo_hijo = next(filter(lambda x: x._id == i, self.nodos))
+                    nodo_hijo.followpos += nodo.primera_pos
+            elif nodo.value == '.':
+                for i in nodo.c1.ultima_pos:
+                    nodo_hijo = next(filter(lambda x: x._id == i, self.nodos))
+                    nodo_hijo.followpos += nodo.c2.firstpos
 
         # Initiate state generation
-        initial_state = self.nodes[-1].firstpos
+        estado_inicial = self.nodos[-1].firstpos
 
         # Filter the nodes that have a symbol
-        self.nodes = list(filter(lambda x: x._id, self.nodes))
-        self.augmented_state = self.nodes[-1]._id
+        self.nodos = list(filter(lambda x: x._id, self.nodos))
+        self.estado_aumentado = self.nodos[-1]._id
 
         # Recursion
-        self.CalcNewStates(initial_state, next(self.STATES))
+        self.CalcularNuevosEstados(estado_inicial, next(self.ESTADOS))
 
-    def CalcNewStates(self, state, curr_state):
+    def CalcularNuevosEstados(self, estado, estado_actual):
 
-        if not self.states:
-            self.states.append(set(state))
-            if self.augmented_state in state:
-                self.accepting_states.update(curr_state)
+        if not self.estados:
+            self.estados.append(set(estado))
+            if self.estado_aumentado in estado:
+                self.estados_aceptacion.update(estado_actual)
 
         # Iteramos por cada símbolo
-        for symbol in self.symbols:
+        for simbolo in self.simbolos:
 
             # Get all the nodes with the same symbol in followpos
-            same_symbols = list(
-                filter(lambda x: x.value == symbol and x._id in state, self.nodes))
+            mismos_simbolos = list(
+                filter(lambda x: x.value == simbolo and x._id in estado, self.nodos))
 
             # Create a new state with the nodes
-            new_state = set()
-            for node in same_symbols:
-                new_state.update(node.followpos)
+            nuevo_estado = set()
+            for nodo in mismos_simbolos:
+                nuevo_estado.update(nodo.followpos)
 
             # new state is not in the state list
-            if new_state not in self.states and new_state:
+            if nuevo_estado not in self.estados and nuevo_estado:
 
                 # Get this new state's letter
-                self.states.append(new_state)
-                next_state = next(self.STATES)
+                self.estados.append(nuevo_estado)
+                nuevo_estado = next(self.ESTADOS)
 
                 # Add state to transition function
                 try:
-                    self.trans_func[next_state]
+                    self.funcion_transicion[nuevo_estado]
                 except:
-                    self.trans_func[next_state] = dict()
+                    self.funcion_transicion[nuevo_estado] = dict()
 
                 try:
-                    existing_states = self.trans_func[curr_state]
+                    estados_existentes = self.funcion_transicion[estado_actual]
                 except:
-                    self.trans_func[curr_state] = dict()
-                    existing_states = self.trans_func[curr_state]
+                    self.funcion_transicion[estado_actual] = dict()
+                    estados_existentes = self.funcion_transicion[estado_actual]
 
                 # Add the reference
-                existing_states[symbol] = next_state
-                self.trans_func[curr_state] = existing_states
+                estados_existentes[simbolo] = nuevo_estado
+                self.funcion_transicion[estado_actual] = estados_existentes
 
                 # Is it an acceptina_state?
-                if self.augmented_state in new_state:
-                    self.accepting_states.update(next_state)
+                if self.estado_aumentado in nuevo_estado:
+                    self.estados_aceptacion.update(nuevo_estado)
 
                 # Repeat with this new state
-                self.CalcNewStates(new_state, next_state)
+                self.CalcularNuevosEstados(nuevo_estado, nuevo_estado)
 
-            elif new_state:
+            elif nuevo_estado:
                 # State already exists... which one is it?
-                for i in range(0, len(self.states)):
+                for i in range(0, len(self.estados)):
 
-                    if self.states[i] == new_state:
-                        state_ref = RAW_STATES[i]
+                    if self.estados[i] == nuevo_estado:
+                        referencia_estado = ESTADOS_BRUTO[i]
                         break
 
                 # Add the symbol transition
                 try:
-                    existing_states = self.trans_func[curr_state]
+                    estados_existentes = self.funcion_transicion[estado_actual]
                 except:
-                    self.trans_func[curr_state] = {}
-                    existing_states = self.trans_func[curr_state]
+                    self.funcion_transicion[estado_actual] = {}
+                    estados_existentes = self.funcion_transicion[estado_actual]
 
-                existing_states[symbol] = state_ref
-                self.trans_func[curr_state] = existing_states
+                estados_existentes[simbolo] = referencia_estado
+                self.funcion_transicion[estado_actual] = estados_existentes
 
-    def ParseTree(self, node):
-        method_name = node.__class__.__name__ + 'Node'
-        method = getattr(self, method_name)
-        return method(node)
+    def ParseArbol(self, nodo):
+        nombre_metodo = nodo.__class__.__name__ + 'Node'
+        metodo = getattr(self, nombre_metodo)
+        return metodo(nodo)
 
-    def LetterNode(self, node):
-        new_node = Node(self.iter, [self.iter], [
-                        self.iter], value=node.value, nullable=False)
-        self.nodes.append(new_node)
-        return new_node
+    def LetraNodo(self, nodo):
+        nuevo_nodo = Nodo(self.iter, [self.iter], [
+                        self.iter], valor=nodo.value, anulable=False)
+        self.nodos.append(nuevo_nodo)
+        return nuevo_nodo
 
-    def OrNode(self, node):
-        node_a = self.ParseTree(node.a)
+    def OrNodo(self, nodo):
+        nodo_a = self.ParseArbol(nodo.a)
         self.iter += 1
-        node_b = self.ParseTree(node.b)
+        nodo_b = self.ParseArbol(nodo.b)
 
-        is_nullable = node_a.nullable or node_b.nullable
-        firstpos = node_a.firstpos + node_b.firstpos
-        lastpos = node_a.lastpos + node_b.lastpos
+        es_anulable = nodo_a.anulable or nodo_b.anulable
+        primera_pos = nodo_a.primera_pos + nodo_b.primera_pos
+        ultima_pos = nodo_a.ultima_pos + nodo_b.ultima_pos
 
-        self.nodes.append(Node(None, firstpos, lastpos,
-                               is_nullable, '|', node_a, node_b))
-        return Node(None, firstpos, lastpos, is_nullable, '|', node_a, node_b)
+        self.nodos.append(Nodo(None, primera_pos, ultima_pos,
+                               es_anulable, '|', nodo_a, nodo_b))
+        return Nodo(None, primera_pos, ultima_pos, es_anulable, '|', nodo_a, nodo_b)
 
-    def AppendNode(self, node):
-        node_a = self.ParseTree(node.a)
+    def AppendNodo(self, nodo):
+        nodo_a = self.ParseArbol(nodo.a)
         self.iter += 1
-        node_b = self.ParseTree(node.b)
+        nodo_b = self.ParseArbol(nodo.b)
 
-        is_nullable = node_a.nullable and node_b.nullable
-        if node_a.nullable:
-            firstpos = node_a.firstpos + node_b.firstpos
+        es_anulable = nodo_a.anulable and nodo_b.anulable
+        if nodo_a.anulable:
+            primera_pos = nodo_a.primera_pos + nodo_b.primera_pos
         else:
-            firstpos = node_a.firstpos
+            primera_pos = nodo_a.primera_pos
 
-        if node_b.nullable:
-            lastpos = node_b.lastpos + node_a.lastpos
+        if nodo_b.anulable:
+            ultima_pos = nodo_b.ultima_pos + nodo_a.ultima_pos
         else:
-            lastpos = node_b.lastpos
+            ultima_pos = nodo_b.ultima_pos
 
-        self.nodes.append(
-            Node(None, firstpos, lastpos, is_nullable, '.', node_a, node_b))
+        self.nodos.append(
+            Nodo(None, primera_pos, ultima_pos, es_anulable, '.', nodo_a, nodo_b))
 
-        return Node(None, firstpos, lastpos, is_nullable, '.', node_a, node_b)
+        return Nodo(None, primera_pos, ultima_pos, es_anulable, '.', nodo_a, nodo_b)
 
-    def KleeneNode(self, node):
-        node_a = self.ParseTree(node.a)
-        firstpos = node_a.firstpos
-        lastpos = node_a.lastpos
-        self.nodes.append(Node(None, firstpos, lastpos, True, '*', node_a))
-        return Node(None, firstpos, lastpos, True, '*', node_a)
+    def KleeneNodo(self, nodo):
+        nodo_a = self.ParseArbol(nodo.a)
+        primera_pos = nodo_a.primera_pos
+        ultima_pos = nodo_a.ultima_pos
+        self.nodos.append(Nodo(None, primera_pos, ultima_pos, True, '*', nodo_a))
+        return Nodo(None, primera_pos, ultima_pos, True, '*', nodo_a)
 
-    def PlusNode(self, node):
-        node_a = self.ParseTree(node.a)
+    def PlusNodo(self, nodo):
+        nodo_a = self.ParseArbol(nodo.a)
 
         self.iter += 1
 
-        node_b = self.KleeneNode(node)
+        nodo_b = self.KleeneNodo(nodo)
 
-        is_nullable = node_a.nullable and node_b.nullable
-        if node_a.nullable:
-            firstpos = node_a.firstpos + node_b.firstpos
+        es_anulable = nodo_a.anulable and nodo_b.anulable
+        if nodo_a.anulable:
+            primera_pos = nodo_a.primera_pos + nodo_b.primera_pos
         else:
-            firstpos = node_a.firstpos
+            primera_pos = nodo_a.primera_pos
 
-        if node_b.nullable:
-            lastpos = node_b.lastpos + node_a.lastpos
+        if nodo_b.anulable:
+            ultima_pos = nodo_b.ultima_pos + nodo_a.ultima_pos
         else:
-            lastpos = node_b.lastpos
+            ultima_pos = nodo_b.ultima_pos
 
-        self.nodes.append(
-            Node(None, firstpos, lastpos, is_nullable, '.', node_a, node_b))
+        self.nodos.append(
+            Nodo(None, primera_pos, ultima_pos, es_anulable, '.', nodo_a, nodo_b))
 
-        return Node(None, firstpos, lastpos, is_nullable, '.', node_a, node_b)
+        return Nodo(None, primera_pos, ultima_pos, es_anulable, '.', nodo_a, nodo_b)
 
-    def QuestionNode(self, node):
+    def QuestionNodo(self, nodo):
         # Node_a is epsilon
-        node_a = Node(None, list(), list(), True)
+        nodo_a = Nodo(None, list(), list(), True)
         self.iter += 1
-        node_b = self.ParseTree(node.a)
+        nodo_b = self.ParseArbol(nodo.a)
 
-        is_nullable = node_a.nullable or node_b.nullable
-        firstpos = node_a.firstpos + node_b.firstpos
-        lastpos = node_a.lastpos + node_b.lastpos
+        es_anulable = nodo_a.anulable or nodo_b.anulable
+        primera_pos = nodo_a.primera_pos + nodo_b.primera_pos
+        ultima_pos = nodo_a.ultima_pos + nodo_b.ultima_pos
 
-        self.nodes.append(Node(None, firstpos, lastpos,
-                               is_nullable, '|', node_a, node_b))
-        return Node(None, firstpos, lastpos, is_nullable, '|', node_a, node_b)
+        self.nodos.append(Nodo(None, primera_pos, ultima_pos,
+                               es_anulable, '|', nodo_a, nodo_b))
+        return Nodo(None, primera_pos, ultima_pos, es_anulable, '|', nodo_a, nodo_b)
 
-    def EvalRegex(self):
-        curr_state = 'A'
-        for symbol in self.regex:
+    def EvaluarRegex(self):
+        estado_actual = 'A'
+        for simbolo in self.expresion_regular:
 
-            if not symbol in self.symbols:
+            if not simbolo in self.simbolos:
                 return 'No'
 
             try:
-                curr_state = self.trans_func[curr_state][symbol]
+                estado_actual = self.funcion_transicion[estado_actual][simbolo]
             except:
-                if curr_state in self.accepting_states and symbol in self.trans_func['A']:
-                    curr_state = self.trans_func['A'][symbol]
+                if estado_actual in self.estados_aceptacion and simbolo in self.funcion_transicion['A']:
+                    estado_actual = self.funcion_transicion['A'][simbolo]
                 else:
                     return 'No'
 
-        return 'Yes' if curr_state in self.accepting_states else 'No'
+        return 'Yes' if estado_actual in self.estados_aceptacion else 'No'
 
-    def GraphDFA(self):
-        states = set(self.trans_func.keys())
-        alphabet = set(self.symbols)
+    def GraficarDFA(self):
+        estados = set(self.funcion_transicion.keys())
+        alfabeto = set(self.simbolos)
 
-        dfa = SimpleDFA(states, alphabet, self.initial_state,
-                        self.accepting_states, self.trans_func)
+        afd = SimpleDFA(estados, alfabeto, self.estado_inicial,
+                        self.estados_aceptacion, self.funcion_transicion)
 
-        graph = dfa.trim().to_graphviz()
+        graph = afd.trim().to_graphviz()
         graph.attr(rankdir='LR')
 
         source = graph.source
@@ -244,23 +244,23 @@ class DDFA:
         graph.render('./output/DirectDFA.gv', format='pdf', view=True)
 
 
-class Node:
-    def __init__(self, _id, firstpos=None, lastpos=None, nullable=False, value=None, c1=None, c2=None):
+class Nodo:
+    def __init__(self, _id, primera_pos=None, ultima_pos=None, anulable=False, valor=None, c1=None, c2=None):
         self._id = _id
-        self.firstpos = firstpos
-        self.lastpos = lastpos
-        self.followpos = list()
-        self.nullable = nullable
-        self.value = value
+        self.primera_pos = primera_pos
+        self.ultima_pos = ultima_pos
+        self.siguientes_pos = list()
+        self.anulable = anulable
+        self.valor = valor
         self.c1 = c1
         self.c2 = c2
 
     def __repr__(self):
         return f'''
     id: {self._id}
-    value: {self.value}
-    firstpos: {self.firstpos}
-    lastpos: {self.lastpos}
-    followpos: {self.followpos}
-    nullabe: {self.nullable}
+    valor: {self.valor}
+    primera_pos: {self.primera_pos}
+    ultima_pos: {self.ultima_pos}
+    siguientes_pos: {self.siguientes_pos}
+    anulable: {self.anulable}
     '''

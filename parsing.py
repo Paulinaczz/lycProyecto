@@ -10,74 +10,74 @@ from nodes.append import Append
 class Parser:
     def __init__(self, tokens):
         self.tokens = iter(tokens)
-        self.Next()
+        self.Siguiente()
 
-    def Next(self):
+    def Siguiente(self):
         try:
-            self.curr_token = next(self.tokens)
+            self.token_act = next(self.tokens)
         except StopIteration:
-            self.curr_token = None
+            self.token_act = None
 
-    def NewSymbol(self):
-        token = self.curr_token
+    def NuevoSimbolo(self):
+        token = self.token_act
 
-        if token.type == TokenType.LPAR:
-            self.Next()
-            res = self.Expression()
+        if token.tipo == TokenType.LPAR:
+            self.Siguiente()
+            res = self.Expresion()
 
-            if self.curr_token.type != TokenType.RPAR:
+            if self.token_act.tipo != TokenType.RPAR:
                 raise Exception('No right parenthesis for expression!')
 
-            self.Next()
+            self.Siguiente()
             return res
 
-        elif token.type == TokenType.LETTER:
-            self.Next()
+        elif token.tipo == TokenType.LETTER:
+            self.Siguiente()
             return Letter(token.value)
 
-    def NewOperator(self):
-        res = self.NewSymbol()
+    def NuevoOperador(self):
+        res = self.NuevoSimbolo()
 
-        while self.curr_token != None and \
+        while self.token_act != None and \
                 (
-                    self.curr_token.type == TokenType.KLEENE or
-                    self.curr_token.type == TokenType.PLUS or
-                    self.curr_token.type == TokenType.QUESTION
+                    self.token_act.tipo == TokenType.KLEENE or
+                    self.token_act.tipo == TokenType.PLUS or
+                    self.token_act.tipo == TokenType.QUESTION
                 ):
-            if self.curr_token.type == TokenType.KLEENE:
-                self.Next()
+            if self.token_act.tipo == TokenType.KLEENE:
+                self.Siguiente()
                 res = Kleene(res)
-            elif self.curr_token.type == TokenType.QUESTION:
-                self.Next()
+            elif self.token_act.tipo == TokenType.QUESTION:
+                self.Siguiente()
                 res = Question(res)
             else:
-                self.Next()
+                self.Siguiente()
                 res = Plus(res)
 
         return res
 
-    def Expression(self):
-        res = self.NewOperator()
+    def Expresion(self):
+        res = self.NuevoOperador()
 
-        while self.curr_token != None and \
+        while self.token_act != None and \
                 (
-                    self.curr_token.type == TokenType.APPEND or
-                    self.curr_token.type == TokenType.OR
+                    self.token_act.tipo == TokenType.APPEND or
+                    self.token_act.tipo == TokenType.OR
                 ):
-            if self.curr_token.type == TokenType.OR:
-                self.Next()
-                res = Or(res, self.NewOperator())
+            if self.token_act.tipo == TokenType.OR:
+                self.Siguiente()
+                res = Or(res, self.NuevoOperador())
 
-            elif self.curr_token.type == TokenType.APPEND:
-                self.Next()
-                res = Append(res, self.NewOperator())
+            elif self.token_act.tipo == TokenType.APPEND:
+                self.Siguiente()
+                res = Append(res, self.NuevoOperador())
 
         return res
 
     def Parse(self):
-        if self.curr_token == None:
+        if self.token_act == None:
             return None
 
-        res = self.Expression()
+        res = self.Expresion()
 
         return res

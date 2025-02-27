@@ -68,7 +68,7 @@
 
 from tokens import Token, TokenType
 
-LETTERS = 'abcdefghijklmnopqrstuvwxyz01234567890.'
+LETRAS = 'abcdefghijklmnopqrstuvwxyz01234567890.'
 
 
 class DirectReader:
@@ -76,62 +76,62 @@ class DirectReader:
     def __init__(self, string: str):
         self.string = iter(string.replace(' ', ''))
         self.input = set()
-        self.rparPending = False
-        self.Next()
+        self.rparPendiente = False
+        self.Siguiente()
 
-    def Next(self):
+    def Siguiente(self):
         try:
-            self.curr_char = next(self.string)
+            self.caracter_actual = next(self.string)
         except StopIteration:
-            self.curr_char = None
+            self.caracter_actual = None
 
-    def CreateTokens(self):
-            while self.curr_char is not None:
+    def CrearTokens(self):
+            while self.caracter_actual is not None:
 
                 # Si es una letra válida
-                if self.curr_char in LETTERS:
-                    self.input.add(self.curr_char)
-                    yield Token(TokenType.LETTER, self.curr_char)
-                    self.Next()
+                if self.caracter_actual in LETRAS:
+                    self.input.add(self.caracter_actual)
+                    yield Token(TokenType.LETTER, self.caracter_actual)
+                    self.Siguiente()
 
                     # Agregar APPEND solo si es necesario
-                    if self.curr_char is not None and self.curr_char in LETTERS + '(':
+                    if self.caracter_actual is not None and self.caracter_actual in LETRAS + '(':
                         yield Token(TokenType.APPEND, '.')
 
                 # Si encuentra un OR
-                elif self.curr_char == '|':
+                elif self.caracter_actual == '|':
                     yield Token(TokenType.OR, '|')
-                    self.Next()
+                    self.Siguiente()
 
                 # Si encuentra un paréntesis de apertura
-                elif self.curr_char == '(':
+                elif self.caracter_actual == '(':
                     yield Token(TokenType.LPAR, '(')  # ✅ Ahora tiene su valor
-                    self.Next()
+                    self.Siguiente()
 
                 # Si encuentra operadores o paréntesis de cierre
-                elif self.curr_char in (')*+?'):
-                    if self.curr_char == ')':
+                elif self.caracter_actual in (')*+?'):
+                    if self.caracter_actual == ')':
                         yield Token(TokenType.RPAR, ')')  # ✅ Ahora tiene su valor
-                    elif self.curr_char == '*':
+                    elif self.caracter_actual == '*':
                         yield Token(TokenType.KLEENE, '*')  # ✅ Ahora tiene su valor
-                    elif self.curr_char == '+':
+                    elif self.caracter_actual == '+':
                         yield Token(TokenType.PLUS, '+')  # ✅ Ahora tiene su valor
-                    elif self.curr_char == '?':
+                    elif self.caracter_actual == '?':
                         yield Token(TokenType.QUESTION, '?')  # ✅ Ahora tiene su valor
 
-                    self.Next()
+                    self.Siguiente()
 
                     # Agregar APPEND solo si la siguiente letra lo requiere
-                    if self.curr_char is not None and self.curr_char in LETTERS + '(':
+                    if self.caracter_actual is not None and self.caracter_actual in LETRAS + '(':
                         yield Token(TokenType.APPEND, '.')
 
                 # Si encuentra un punto (concatenación explícita)
-                elif self.curr_char == '.':  
+                elif self.caracter_actual == '.':  
                     yield Token(TokenType.APPEND, '.')  
-                    self.Next()
+                    self.Siguiente()
 
                 else:
-                    raise Exception(f'Entrada inválida: {self.curr_char}')
+                    raise Exception(f'Entrada inválida: {self.caracter_actual}')
 
-    def GetSymbols(self):
+    def GetSimbolos(self):
         return self.input

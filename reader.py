@@ -1,99 +1,99 @@
 from tokens import Token, TokenType
 
-LETTERS = 'abcdefghijklmnopqrstuvwxyz01234567890.'
+LETRAS = 'abcdefghijklmnopqrstuvwxyz01234567890.'
 
 
 class Reader:
     def __init__(self, string: str):
         self.string = iter(string.replace(' ', ''))
         self.input = set()
-        self.Next()
+        self.Siguiente()
 
-    def Next(self):
+    def Siguiente(self):
         try:
-            self.curr_char = next(self.string)
+            self.caracter_act = next(self.string)
         except StopIteration:
-            self.curr_char = None
+            self.caracter_act = None
 
-    def CreateTokens(self):
-        while self.curr_char != None:
+    def CrearTokens(self):
+        while self.caracter_act != None:
 
-            if self.curr_char in LETTERS:
-                self.input.add(self.curr_char)
+            if self.caracter_act in LETRAS:
+                self.input.add(self.caracter_act)
                 yield Token(TokenType.LPAR, '(')
-                yield Token(TokenType.LETTER, self.curr_char)
+                yield Token(TokenType.LETTER, self.caracter_act)
 
-                self.Next()
-                added_parenthesis = False
+                self.Siguiente()
+                parentesis_añadidos = False
 
-                while self.curr_char != None and \
-                        (self.curr_char in LETTERS or self.curr_char in '*+?'):
+                while self.caracter_act != None and \
+                        (self.caracter_act in LETRAS or self.caracter_act in '*+?'):
 
-                    if self.curr_char == '*':
+                    if self.caracter_act == '*':
                         yield Token(TokenType.KLEENE, '*')
                         yield Token(TokenType.RPAR, ')')
-                        added_parenthesis = True
+                        parentesis_añadidos = True
 
-                    elif self.curr_char == '+':
+                    elif self.caracter_act == '+':
                         yield Token(TokenType.PLUS, '+')
                         yield Token(TokenType.RPAR, ')')
-                        added_parenthesis = True
+                        parentesis_añadidos = True
 
-                    elif self.curr_char == '?':
+                    elif self.caracter_act == '?':
                         yield Token(TokenType.QUESTION, '?')
                         yield Token(TokenType.RPAR, ')')
-                        added_parenthesis = True
+                        parentesis_añadidos = True
 
-                    elif self.curr_char in LETTERS:
-                        self.input.add(self.curr_char)
+                    elif self.caracter_act in LETRAS:
+                        self.input.add(self.caracter_act)
                         yield Token(TokenType.APPEND)
-                        yield Token(TokenType.LETTER, self.curr_char)
+                        yield Token(TokenType.LETTER, self.caracter_act)
 
-                    self.Next()
+                    self.Siguiente()
 
-                    if self.curr_char != None and self.curr_char == '(' and added_parenthesis:
+                    if self.caracter_act != None and self.caracter_act == '(' and parentesis_añadidos:
                         yield Token(TokenType.APPEND)
 
-                if self.curr_char != None and self.curr_char == '(' and not added_parenthesis:
+                if self.caracter_act != None and self.caracter_act == '(' and not parentesis_añadidos:
                     yield Token(TokenType.RPAR, ')')
                     yield Token(TokenType.APPEND)
 
-                elif not added_parenthesis:
+                elif not parentesis_añadidos:
                     yield Token(TokenType.RPAR, ')')
 
-            elif self.curr_char == '|':
-                self.Next()
+            elif self.caracter_act == '|':
+                self.Siguiente()
                 yield Token(TokenType.OR, '|')
 
-            elif self.curr_char == '(':
-                self.Next()
+            elif self.caracter_act == '(':
+                self.Siguiente()
                 yield Token(TokenType.LPAR)
 
-            elif self.curr_char in (')*+?'):
+            elif self.caracter_act in (')*+?'):
 
-                if self.curr_char == ')':
-                    self.Next()
+                if self.caracter_act == ')':
+                    self.Siguiente()
                     yield Token(TokenType.RPAR)
 
-                elif self.curr_char == '*':
-                    self.Next()
+                elif self.caracter_act == '*':
+                    self.Siguiente()
                     yield Token(TokenType.KLEENE)
 
-                elif self.curr_char == '+':
-                    self.Next()
+                elif self.caracter_act == '+':
+                    self.Siguiente()
                     yield Token(TokenType.PLUS)
 
-                elif self.curr_char == '?':
-                    self.Next()
+                elif self.caracter_act == '?':
+                    self.Siguiente()
                     yield Token(TokenType.QUESTION)
 
                 # Finally, check if we need to add an append token
-                if self.curr_char != None and \
-                        (self.curr_char in LETTERS or self.curr_char == '('):
+                if self.caracter_act != None and \
+                        (self.caracter_act in LETRAS or self.caracter_act == '('):
                     yield Token(TokenType.APPEND, '.')
 
             else:
-                raise Exception(f'Invalid entry: {self.curr_char}')
+                raise Exception(f'Invalid entry: {self.caracter_act}')
 
-    def GetSymbols(self):
+    def GetSimbolos(self):
         return self.input

@@ -12,10 +12,10 @@ class TokenType(Enum):
     RPAR = 7 # ')'
 
 class Token:
-    def __init__(self, type: TokenType, value=None):
-        self.type = type
+    def __init__(self, tipo: TokenType, value=None):
+        self.tipo = tipo
         self.value = value
-        self.precedence = type.value
+        self.precedence = tipo.value
 
     def __repr__(self):
-        return f'{self.type.name}: {self.value}'
+        return f'{self.tipo.name}: {self.value}'
