@@ -10,7 +10,6 @@ from tokens import TokenType
 from utils import WriteToFile
 import os
 
-
 class AFND:
     def __init__(self, arbol, simbolos, expresion_regular):
         # Propiedades de un autómata finito
@@ -44,18 +43,9 @@ class AFND:
         return nodo.value
 
     def AppendNode(self, nodo):
-        self.dot.edge(
-            str(self.estado_act - 1),
-            str(self.estado_act),
-            self.Render(nodo.a)
-        )
-
+        self.dot.edge(str(self.estado_act - 1), str(self.estado_act), self.Render(nodo.a))
         self.estado_act += 1
-        self.dot.edge(
-            str(self.estado_act - 1),
-            str(self.estado_act),
-            self.Render(nodo.b)
-        )
+        self.dot.edge(str(self.estado_act - 1), str(self.estado_act), self.Render(nodo.b))
 
     def OrNode(self, nodo):
         nodo_inicial = self.estado_act - 1
@@ -74,30 +64,40 @@ class AFND:
         self.dot.edge(str(nodo_inicial), str(self.estado_act), 'e')
         self.estado_act += 1
 
-        # Transición a la segunda rama
+        # from epsilon to second
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), self.Render(nodo.b))
         self.estado_act += 1
 
-        # Transiciones epsilon finales
+        # Transición a la segunda rama
         self.dot.edge(str(mid_nodo), str(self.estado_act), 'e')
+
+        # Transiciones epsilon finales
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e')
 
     def KleeneNode(self, nodo):
-        primer_nodo = self.estado_act - 1
-        self.dot.edge(str(primer_nodo), str(self.estado_act), 'e')
 
+        self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e')
+
+        primer_nodo = self.estado_act - 1
         self.estado_act += 1
+
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), self.Render(nodo.a))
 
         # Conexión final de la cerradura de Kleene
         self.dot.edge(str(self.estado_act), str(primer_nodo + 1), 'e')
         self.estado_act += 1
-        self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e')
+
+        # Segundo epsilon
+        self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e'
+        )
+
+        # Primer epsilon al último estado
         self.dot.edge(str(primer_nodo), str(self.estado_act), 'e')
 
     def PlusNode(self, nodo):
-        self.KleeneNodo(nodo)
+        self.KleeneNode(nodo)
         self.estado_act += 1
+
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), self.Render(nodo.a))
 
     def QuestionNode(self, nodo):
@@ -117,9 +117,13 @@ class AFND:
         self.dot.edge(str(nodo_inicial), str(self.estado_act), 'e')
         self.estado_act += 1
 
-        # Transición final
+        # Otra transicion epsilon para permitir el paso al estado final
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e')
+        self.estado_act += 1
+
+        # Transición final
         self.dot.edge(str(mid_nodo), str(self.estado_act), 'e')
+        self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e')
 
     def GenerarTablaTransicion(self):
         """Genera la tabla de transiciones del NFA."""
@@ -149,30 +153,14 @@ class AFND:
         return self.estado_act
 
     def WriteAFNDiagram(self):
-        if not os.path.exists("./output"):
-            os.makedirs("./output")
-
-        # 🔹 Eliminar transiciones con `#` antes de generar el gráfico
-        estados_a_remover = []
-        for estado, transiciones in list(self.func_trans.items()):  # Convertimos a lista para evitar RuntimeError
-            if '#' in transiciones:
-                estados_a_remover.append(estado)
-                del transiciones['#']  # ✅ Eliminar la transición con `#`
-
-        # 🔹 También eliminamos el estado de aceptación si está vinculado con `#`
-        for estado in estados_a_remover:
-            if estado in self.estados_aceptacion:
-                self.estados_aceptacion.remove(estado)
-
-        # 🔹 Eliminar la transición `#` en el archivo fuente de Graphviz
-        dot_lines = self.dot.source.split("\n")
-        dot_lines = [line for line in dot_lines if "->" not in line or "#" not in line]
-
-        # Guardar el archivo sin `#`
-        source = "\n".join(dot_lines)
-        with open("./output/NFA.gv", "w") as f:
-            f.write(source)
-
-        print("\n✅ Diagrama del AFND generado sin `#`. Abriendo archivo...")
-
-        self.dot.render("./output/NFA.gv", view=True)
+        source = self.dot.source
+        debug_string = f'''
+NFA:
+- Símbolos: {self.simbolos}
+- Estado final: {self.estados_aceptacion}
+- Tabla de transición:
+        '''
+        # print(debug_string)
+        # pprint(self.trans_func)
+        WriteToFile('./output/NFA.gv', source)
+        self.dot.render('./output/NFA.gv', view=True)
