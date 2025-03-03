@@ -97,36 +97,30 @@ class AFND:
     def PlusNode(self, nodo):
         self.KleeneNode(nodo)
         self.estado_act += 1
-
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), self.Render(nodo.a))
 
     def QuestionNode(self, nodo):
         nodo_inicial = self.estado_act - 1
         mid_nodo = None
-
         # Primera epsilon
         self.dot.edge(str(nodo_inicial), str(self.estado_act), 'e')
         self.estado_act += 1
-
         # Transición a la opción 1
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), self.Render(nodo.a))
         mid_nodo = self.estado_act
         self.estado_act += 1
-
         # Segunda epsilon
         self.dot.edge(str(nodo_inicial), str(self.estado_act), 'e')
         self.estado_act += 1
-
         # Otra transicion epsilon para permitir el paso al estado final
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e')
         self.estado_act += 1
-
         # Transición final
         self.dot.edge(str(mid_nodo), str(self.estado_act), 'e')
         self.dot.edge(str(self.estado_act - 1), str(self.estado_act), 'e')
 
     def GenerarTablaTransicion(self):
-        """Genera la tabla de transiciones del NFA."""
+        
         estados = [i.replace('\t', '') for i in self.dot.source.split('\n') if '->' in i and '=' in i]
 
         self.func_trans = dict.fromkeys([str(s) for s in range(self.estado_act + 1)])
