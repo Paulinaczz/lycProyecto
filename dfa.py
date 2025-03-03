@@ -169,6 +169,19 @@ class AFD:
         WriteToFile('./output/DFA.gv', source)
         graph.render('./output/DFA.gv', format='pdf', view=True)
 
+    def EvaluarCadena(self, cadena):
+        estado_actual = 'A'
+
+        for simbolo in cadena:
+            if simbolo not in self.simbolos:
+                return False  # Símbolo no reconocido, cadena inválida
+
+            try:
+                estado_actual = self.funcion_transicion[estado_actual][simbolo]
+            except KeyError:
+                return False  # No hay transición válida
+
+        return estado_actual in self.estados_aceptacion  # Solo retorna True si termina en un estado de aceptación
 
 class Nodo:
     def __init__(self, estado, siguientes_estados):

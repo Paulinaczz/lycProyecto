@@ -5,6 +5,36 @@ from parsing import Parser
 from nfa import AFND
 from dfa import AFD
 
+def validar_cadena(dfa):
+    """Muestra una ventana para ingresar una cadena y validarla contra el AFD."""
+    def procesar_validacion():
+        cadena = entry_cadena.get()
+        if not cadena:
+            messagebox.showerror("Error", "Por favor, ingresa una cadena para validar.")
+            return
+        resultado = dfa.EvaluarCadena(cadena)
+        messagebox.showinfo("Resultado", f"La cadena {'es válida' if resultado else 'NO es válida'} en el lenguaje.")
+
+    def volver():
+        ventana_validacion.destroy()
+
+    ventana_validacion = tk.Toplevel(root)
+    ventana_validacion.title("Validar Cadena")
+    ventana_validacion.geometry("350x150")
+
+    tk.Label(ventana_validacion, text="Ingresa una cadena para validar:").pack(pady=10)
+    entry_cadena = tk.Entry(ventana_validacion, width=30)
+    entry_cadena.pack(pady=5)
+
+    frame_botones = tk.Frame(ventana_validacion)
+    frame_botones.pack(pady=10)
+
+    btn_validar = tk.Button(frame_botones, text="Validar", command=procesar_validacion)
+    btn_validar.pack(side=tk.LEFT, padx=10)
+
+    btn_volver = tk.Button(frame_botones, text="Volver", command=volver)
+    btn_volver.pack(side=tk.RIGHT, padx=10)
+
 def convertir_regex():
     regex = entry_regex.get()
     if not regex:
@@ -30,6 +60,7 @@ def convertir_regex():
         dfa.GraficarAFD()
 
         messagebox.showinfo("Éxito", "Diagramas del AFND y AFD generados con éxito.")
+        validar_cadena(dfa)  # Llamar a la interfaz de validación
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error: {e}")
 
@@ -46,4 +77,3 @@ btn_convertir = tk.Button(root, text="Convertir", command=convertir_regex)
 btn_convertir.pack(pady=20)
 
 root.mainloop()
-#a
