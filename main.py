@@ -55,7 +55,7 @@ def convertir_regex():
         afnd.WriteAFNDiagram()
         
         # Convertir AFND a AFD
-        dfa = AFD(afnd.func_trans, reader.GetSimbolos(), list(afnd.func_trans.keys()), afnd.estados_aceptacion, regex)
+        dfa = AFD(afnd.func_trans, reader.GetSimbolos(), afnd.estados_aceptacion, regex)
         dfa.TransformarAFNaAFD()
         dfa.GraficarAFD()
 

@@ -1,118 +1,118 @@
-from pprint import pprint
 from pythomata import SimpleDFA
-from graphviz import Digraph
 from utils import WriteToFile
 
-STATES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
+ESTADOS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 class AFD:
-    def __init__(self, tabla_transicion, simbolos, estados, estado_final_afn, expresion_regular):
-
-        # Proveniente del NFA
-        self.tabla_transicion = tabla_transicion
-        self.estado_final_afn = estado_final_afn
-
-        # Propiedades de un AF
-        self.simbolos = simbolos
-        self.funcion_transicion = dict()
-        self.estados = dict()
-        self.estados_aceptacion = list()
+    def __init__(self, tabla_transicion, simbolos, estado_final_afn, expresion_regular):
+        # Inicialización de atributos básicos
         self.estado_inicial = 'A'
+        self.estado_final_afn = estado_final_afn
+        self.expresion_regular = expresion_regular
 
+        # Propiedades relacionadas con el autómata
+        self.tabla_transicion = tabla_transicion
+        self.simbolos = simbolos
+
+        # Estructuras para manejar el AFD
+        self.funcion_transicion = {}
+        self.estados = {}
+        self.estados_aceptacion = []
+        self.nodos = []
+        self.iteraciones = 0
+
+        # Eliminar el símbolo epsilon si existe
+        self.EliminarEpsilon()
+        
+
+    def EliminarEpsilon(self):
         try:
             self.simbolos.remove('e')
         except:
             pass
 
-        self.nodos = []
-        self.iteraciones = 0
-        self.expresion_regular = expresion_regular
-
-    def MoverA(self, id_nodo, simbolo_eval='e', array=[], agregar_inicial=False, mover_una_vez=False):
-
-        arr = array
+    def MoverA(self, id_nodo, simbolo_eval='e', array=None, agregar_inicial=False, mover_una_vez=False):
+        if array is None:
+            array = []
         nodo = self.nodos[id_nodo]
-        # Recorremos el nodo si no está visitado
-        if not nodo.visitado and simbolo_eval in nodo.siguientes_estados:
 
-            # Marcamos el nodo
-            nodo.Marcar()
+        # Recorremos el nodo solo si no está visitado
+        if not nodo.visitado and simbolo_eval in nodo.siguientes_estados:
+            nodo.Marcar() # Marcamos el nodo como visitado
+            
             # Obtenemos los siguientes estados
             siguientes_estados = [int(s) for s in nodo.siguientes_estados[simbolo_eval]]
-            if simbolo_eval == 'e':
-                arr = [*siguientes_estados]
-            else:
-                arr = [*siguientes_estados]
+            array.extend(siguientes_estados)
 
             # ¿Tenemos que agregar el nodo inicial?
             if agregar_inicial:
-                arr = [*siguientes_estados, id_nodo]
+                array.append(id_nodo)
 
             # Si tenemos que movernos varias veces, habrá que hacerlo de forma recursiva
             if not mover_una_vez:
-                for nuevo_id_nodo in nodo.siguientes_estados[simbolo_eval]:
-                    arr += [*self.MoverA(int(nuevo_id_nodo), simbolo_eval, arr)]
+                for nuevo_id_nodo in siguientes_estados:
+                    self.MoverA(nuevo_id_nodo, simbolo_eval, array, agregar_inicial, mover_una_vez)
 
-        return list(set(arr))
+        return list(set(array))
 
     def EvaluarCierre(self, cierre, node,  estado_actual):
 
-        # Estado inicial no creado?
+        # Verificar si la clausura aún no ha sido calculada
         if not cierre:
             cierre = self.MoverA(0, agregar_inicial=True)
-            cierre.append(0)
+            cierre.append(0) # Asegurarse de incluir el estado inicial (0)
             self.estados[estado_actual] = cierre
             if self.estado_final_afn in cierre:
                 self.estados_aceptacion.append(estado_actual)
 
-        # Por cada símbolo dentro del set...
+        # Por cada símbolo dentro del conjunto de símbolos
         for simbolo in self.simbolos:
-            cierre_simbolo = list()
-            nuevo_conjunto = list()
-
+            cierre_simbolo = []
+            nuevo_conjunto = []
             # Clausura con el símbolo y el estado
             for valor in cierre:
                 cierre_simbolo += self.MoverA(valor, simbolo, mover_una_vez=True)
                 [nodo.Desmarcar() for nodo in self.nodos]
-
             # Clausura con epsilon y el estado
             if cierre_simbolo:
-                cierre_epsilon = list()
+                cierre_epsilon = []
                 for valor_e in cierre_simbolo:
                     cierre_epsilon += self.MoverA(valor_e)
                     [nodo.Desmarcar() for nodo in self.nodos]
+                nuevo_conjunto += cierre_simbolo
+                nuevo_conjunto += cierre_epsilon
+                # Eliminar duplicados usando set()
+                nuevo_conjunto = list(set(nuevo_conjunto))
 
-                nuevo_conjunto += list(set([*cierre_simbolo, *cierre_epsilon]))
-
-                # Si este nuevo estado no existe es nuevo...
+                # Verificar si el nuevo conjunto ya ha sido procesado
                 if not nuevo_conjunto in self.estados.values():
                     self.iteraciones += 1
-                    nuevo_estado = STATES[self.iteraciones]
+                    nuevo_estado = ESTADOS[self.iteraciones]
 
-                    # Se crea la entrada en la función de transición
+                    # Intentamos agregar la transición para el estado actual
                     try:
                         dict_actual = self.funcion_transicion[estado_actual]
                         dict_actual[simbolo] = nuevo_estado
                     except:
+                        # Si no existe la transición para el estado actual, la creamos
                         self.funcion_transicion[estado_actual] = {simbolo: nuevo_estado}
 
                     try:
                         self.funcion_transicion[nuevo_estado]
                     except:
+                        # Si el nuevo estado no tiene transiciones, lo inicializamos
                         self.funcion_transicion[nuevo_estado] = {}
 
-                    # Se agrega dicha entrada
                     self.estados[nuevo_estado] = nuevo_conjunto
 
-                    # Si posee el estado final del AFN, entonces agregarlo al set
+                    # Si posee el estado final del AFN, entonces lo agregamos aceptación
                     if self.estado_final_afn in nuevo_conjunto:
                         self.estados_aceptacion.append(nuevo_estado)
 
-                    # Repetir con el nuevo set
+                    # Llamada recursiva para procesar el nuevo conjunto de estados
                     self.EvaluarCierre(nuevo_conjunto, valor, nuevo_estado)
 
-                # Este estado ya existe, se agrega la transición.
+                # Si el estado ya existe, se agrega la transición.
                 else:
                     for S, V in self.estados.items():
                         if nuevo_conjunto == V:
