@@ -157,7 +157,8 @@ class AFD:
     def GraficarAFD(self):
         estados = set(self.funcion_transicion.keys())
         alfabeto = set(self.simbolos)
-        estado_inicial = 'A'
+        estado_inicial = self.estado_inicial  # Usa el estado inicial después de minimizar
+
 
         afd = SimpleDFA(estados, alfabeto, estado_inicial,
                         set(self.estados_aceptacion), self.funcion_transicion)
@@ -174,14 +175,80 @@ class AFD:
 
         for simbolo in cadena:
             if simbolo not in self.simbolos:
-                return False  # Símbolo no reconocido, cadena inválida
+                return False 
 
             try:
                 estado_actual = self.funcion_transicion[estado_actual][simbolo]
             except KeyError:
-                return False  # No hay transición válida
+                return False
 
-        return estado_actual in self.estados_aceptacion  # Solo retorna True si termina en un estado de aceptación
+        return estado_actual in self.estados_aceptacion
+
+    def minimizar(self):
+        if not self.funcion_transicion:
+            return
+
+        estados = set(self.funcion_transicion.keys())
+        finales = set(self.estados_aceptacion)
+        no_finales = estados - finales
+
+        # Crear particiones iniciales
+        particiones = [finales, no_finales] if finales and no_finales else [finales or no_finales]
+
+        while True:
+            nuevas_particiones = []
+            for grupo in particiones:
+                subgrupos = {}
+                for estado in grupo:
+                    clave = tuple(
+                        next(
+                            (i for i, g in enumerate(particiones) if self.funcion_transicion.get(estado, {}).get(simbolo) in g),
+                            -1  # Estado no encontrado en ninguna partición
+                        )
+                        for simbolo in self.simbolos
+                    )
+                    subgrupos.setdefault(clave, set()).add(estado)
+
+                nuevas_particiones.extend(subgrupos.values())
+
+            if nuevas_particiones == particiones:
+                break
+            particiones = nuevas_particiones
+
+        estado_mapeo = {}
+        nueva_funcion_transicion = {}
+        nuevos_estados_aceptacion = []
+        nuevo_estado_inicial = None
+
+        # Crear nuevos estados y asignar el estado inicial correctamente
+        for i, grupo in enumerate(particiones):
+            nombre_grupo = f'Q{i}'
+            for estado in grupo:
+                estado_mapeo[estado] = nombre_grupo
+            nueva_funcion_transicion[nombre_grupo] = {}
+            if self.estado_inicial in grupo:  # Asegurar que el estado inicial minimizado se asigna correctamente
+                nuevo_estado_inicial = nombre_grupo
+            if grupo & finales:
+                nuevos_estados_aceptacion.append(nombre_grupo)
+
+        # Verificar que el estado inicial se ha asignado correctamente
+        if nuevo_estado_inicial is None:
+            raise ValueError(f"El estado inicial '{self.estado_inicial}' no fue encontrado en las particiones: {particiones}")
+
+        # Construir la nueva función de transición
+        for grupo in particiones:
+            representante = next(iter(grupo))
+            for simbolo in self.simbolos:
+                destino = self.funcion_transicion.get(representante, {}).get(simbolo)
+                if destino in estado_mapeo:
+                    nueva_funcion_transicion[estado_mapeo[representante]][simbolo] = estado_mapeo[destino]
+
+        # Reemplazar el DFA con su versión minimizada
+        self.funcion_transicion = nueva_funcion_transicion
+        self.estados_aceptacion = nuevos_estados_aceptacion
+        self.estado_inicial = nuevo_estado_inicial
+
+
 
 class Nodo:
     def __init__(self, estado, siguientes_estados):

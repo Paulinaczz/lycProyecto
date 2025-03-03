@@ -58,8 +58,12 @@ def convertir_regex():
         dfa = AFD(afnd.func_trans, reader.GetSimbolos(), list(afnd.func_trans.keys()), afnd.estados_aceptacion, regex)
         dfa.TransformarAFNaAFD()
         dfa.GraficarAFD()
+        
+        # Minimizar el AFD
+        dfa.minimizar()
+        dfa.GraficarAFD()
 
-        messagebox.showinfo("Éxito", "Diagramas del AFND y AFD generados con éxito.")
+        messagebox.showinfo("Éxito", "Diagramas del AFND, AFD y AFD minimizado generados con éxito.")
         validar_cadena(dfa)  # Llamar a la interfaz de validación
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error: {e}")
