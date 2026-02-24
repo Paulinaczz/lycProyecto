@@ -1,6 +1,8 @@
 from pythomata import SimpleDFA
 from utils import WriteToFile
 
+# prueba
+
 ESTADOS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 class AFD:
